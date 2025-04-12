@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+  <meta charset="UTF-8">
+  <title>FinWise - Finance for Young Workers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Kannada font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans Kannada', 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #6f42c1;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+    .main {
+      padding: 2em;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 {
+      color: #34495e;
+    }
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 1.5em;
+      margin-top: 1em;
+    }
+    #chatbox {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 1em;
+      background: #f1f1f1;
+      margin-top: 1em;
+      border-radius: 8px;
+    }
+    .user, .bot {
+      margin-bottom: 0.75em;
+    }
+    .user {
+      text-align: right;
+      color: #2980b9;
+    }
+    .bot {
+      text-align: left;
+      color: #6f42c1;
+    }
+    input[type="text"] {
+      width: 75%;
+      padding: 0.7em;
+      margin-top: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.7em 1em;
+      background-color: #6f42c1;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #6f42c1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>FinWise</h1>
+    <p>ನಿಮ್ಮ ಸಂಬಳವನ್ನು ಹೇಗೆ ಉಳಿಸಬೇಕೆಂದು ತಿಳಿಯಿರಿ (Learn how to save your salary)</p>
+  </header>
+
+  <div class="main">
+    <div class="card">
+      <h2>💡 ನಾವು ಏನು ಮಾಡುತ್ತೇವೆ</h2>
+      <p>Pizza Hut, ಸಲೂನ್, ಅಥವಾ ಡೆಲಿವರಿ ಕೆಲಸ ಮಾಡುತ್ತೀರಾ? FinWise ನಿಮಗೆ ಕನ್ನಡದಲ್ಲಿ ಸಂಪಾದನೆಯನ್ನು ಯೋಜಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ!</p>
+      <ul>
+        <li>ಉದ್ದೇಶಗಳನ್ನು ಹೊಂದಿಸಿ</li>
+        <li>ಖರ್ಚುಗಳನ್ನು ಗಮನದಲ್ಲಿಡಿ</li>
+        <li>ಪ್ರಶ್ನೆಗಳನ್ನು ಕನ್ನಡದಲ್ಲಿ ಕೇಳಿ 💬</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🤖 ಕನ್ನಡ ಚಾಟ್‌ಬಾಟ್</h2>
+      <div id="chatbox">
+        <div class="bot">ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಹಣ ಉಳಿಸುವ ಸಹಾಯಗಾರ. ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?</div>
+      </div>
+      <input type="text" id="userInput" placeholder="ನಿಮ್ಮ ಪ್ರಶ್ನೆ ಇಲ್ಲಿ ಬರೆಯಿರಿ...">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="startVoiceInput()">🎤 Speak</button>
+
+      <!-- Audio element for TTS playback -->
+      <audio id="botAudio" controls style="display: none; margin-top: 1em;"></audio>
+    </div>
+  </div>
+
+  <script>
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const chatbox = document.getElementById('chatbox');
+
+      const userDiv = document.createElement('div');
+      userDiv.className = 'user';
+      userDiv.innerText = message;
+      chatbox.appendChild(userDiv);
+
+      fetch('/accounts/chatbot/?query=' + encodeURIComponent(message))
+        .then(response => response.json())
+        .then(data => {
+          const botDiv = document.createElement('div');
+          botDiv.className = 'bot';
+          botDiv.innerText = data.response;
+          chatbox.appendChild(botDiv);
+          chatbox.scrollTop = chatbox.scrollHeight;
+
+          // Play TTS audio file from server
+          const audioPlayer = document.getElementById('botAudio');
+          audioPlayer.src = data.audio;
+          audioPlayer.style.display = 'block';
+          audioPlayer.play();
+        });
+
+      input.value = '';
+    }
+
+    function startVoiceInput() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'kn-IN';
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+        sendMessage();
+      };
+
+      recognition.onerror = function(event) {
+    if (event.error === "network") {
+        alert("⚠️ Network error: Please check your internet connection.");
+    } else {
+        console.error("Voice input error:", event.error);
+    }
+};
+
+    }
+  </script>
+
+</body>
+</html>
